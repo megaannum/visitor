@@ -44,12 +44,12 @@ Nothing new here.
 
 One of the problems with this is that it is hard to structure the pattern so that:
 
-  Filters can be applied as to whether an element should be visited or not,
-  Filters can be applied as to whether an element's children should be visited or not,
-  Mechanism to stop the visiting after some condition is reached,
-  Whether the element "visit" occurs before or after the element's children have been traversed,
-  Whether the element "visit", itself, controls when the element's children are traversed, and, finally,
-  If one is doing a breadth-first or depth-first traversal.
+*  Filters can be applied as to whether an element should be visited or not,
+*  Filters can be applied as to whether an element's children should be visited or not,
+*  Mechanism to stop the visiting after some condition is reached,
+*  Whether the element "visit" occurs before or after the element's children have been traversed,
+*  Whether the element "visit", itself, controls when the element's children are traversed, and, finally,
+*  If one is doing a breadth-first or depth-first traversal.
 
 Yes, one can use generics to add a parameterized return value, say R, and a secondary argument of type, say D:
 
@@ -143,10 +143,35 @@ checks it the Visitor should stop or not.
 
 The "breadth" method orchestrates a breadth-first traversal. While, I am not saying that its pretty, it does work. The QueueControl is gotten from the Visit.Agent interface (yes, I have an Object associated with and Interface) which supports the traversal and holds the breadth-first Queue (pretty standard way of doing such a traversal). The method controls both the enqueuing of nodes and their dequeuing, calling their associated "visit" method and adding their children to the queue.
 
+    @SuppressWarnings("unchecked")
+    default public void breadth(Consumer<?> func, VISITABLE node) {
+      QueueControl<Consumer<?>,VISITABLE> qc = getQueueControl();
+      qc.queue().enqueue(new Pair<Consumer<?>,VISITABLE>(func, node));
+
+      if (qc.notInBreadth()) {
+        qc.enterBreadth();
+        while (! qc.queue().isEmpty()) {
+          if (stop()) {
+            break;
+          }
+          Pair<Consumer<?>,VISITABLE> pair = qc.queue().dequeue();
+          Consumer<?> funcNext = pair.left;
+          VISITABLE nodeNext = pair.right;
+          ((Consumer<VISITABLE>) funcNext).accept(nodeNext);
+          if (filter().visitChildren(nodeNext)) {
+            for (VISITABLE child : nodeNext.children()) {
+              child.accept((VISITOR)this);
+            }
+          }
+        }
+        qc.leaveBreadth();
+      }
+    }
+
 The full implementation is under the "src" directory in the Visit.java file. The Visit interface contains three inner interfaces: 
 
-  Filter: the filter interface with default implementations,
-  Target: the visitable interface which all Element to be visited must implement which as the standard Visitor "accept" method as well as a "children" method that returns a Collection of child elements, and
-  Agent: the standard visitor base interface which has a number of default methods that control the visit traversal.
+* Filter: the filter interface with default implementations,
+* Target: the visitable interface which all Element to be visited must implement which as the standard Visitor "accept" method as well as a "children" method that returns a Collection of child elements, and
+* Agent: the standard visitor base interface which has a number of default methods that control the visit traversal.
 
 There is an "example" directory that can be build and run using "run_example" which demonstrates all four types of traversals.
