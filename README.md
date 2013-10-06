@@ -81,14 +81,14 @@ reference capability.
 
     import java.util.function.Consumer;
 
-    class A implements Visit.Agent<A, Visitor> {
+    class A implements Visit.Target<A, Visitor> {
       ...
       public void accept(Visitor visitor) {
         Consumer<A> func = visitor::visit
         visit(func, this);
       }
     }
-    class B implements Visit.Agent<B, Visitor> {
+    class B implements Visit.Target<B, Visitor> {
       ...
       public void accept(Visitor visitor) {
         Consumer<B> func = visitor::visit
@@ -175,3 +175,8 @@ The full implementation is under the "src" directory in the Visit.java file. The
 * Agent: the standard visitor base interface which has a number of default methods that control the visit traversal.
 
 There is an "example" directory that can be build and run using "run_example" which demonstrates all four types of traversals.
+
+TODO: 
+
+  * I've considered add the reverse traversal of a node's children as and option, but Java does not have a "reverse" convenience method for a Collection; it does have one for a List. Yea, a general Collection does not have a "natural" traversal order so it, also, does not have a "natural" reverse traversal order. None the less, Java could have provided something. At any rate, don't know if its worth the (small) effort to include it. The breadth-first support is enough of a hack.
+
