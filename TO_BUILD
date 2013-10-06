@@ -1,0 +1,13 @@
+
+
+To build the visitor jar:
+  #> ant
+
+To build both the visitor and example jars:
+  #> ant example
+
+To run examples:
+  #> ./run_example.sh -t DEPTH_FIRST_PRE
+  #> ./run_example.sh -t DEPTH_FIRST_POST
+  #> ./run_example.sh -t DEPTH_FIRST_AROUND
+  #> ./run_example.sh -t BREADTH_FIRST

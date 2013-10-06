@@ -1,0 +1,142 @@
+<!--
+ Ant Build file for visitor.
+-->
+<project name="visitor" default="all" basedir=".">
+  
+  <property environment="env"/>
+
+<!--
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+-->
+<!--
+  <taskdef resource="net/sf/antcontrib/antlib.xml">
+    <classpath>
+        <pathelement location="/usr/share/ant/lib/ant-contrib-1.0b3.jar" />
+    </classpath>
+  </taskdef>
+-->
+
+
+  <property name="junit.jar"            value="/usr/share/java/junit.jar"/>
+  <property name="javacchome"           value="/usr/share/java"/>
+  <property name="build.compiler"       value="modern"/>
+
+  <property name="package.path"         value="com/megaannum/visitor"/>
+
+  <property name="lib.dir"              value="./lib"/>
+  <property name="src.dir"              value="./src"/>
+  <property name="example.dir"          value="./example"/>
+  <property name="main.dir"             value="${src.dir}/main"/>
+  <property name="java.dir"             value="${main.dir}/java"/>
+  <property name="test.dir"             value="${src.dir}/test"/>
+  <property name="resource.dir"         value="${src.dir}/resource"/>
+
+
+  <property name="build.dir"            value="./classes" />
+  <property name="test.build.dir"       value="./testclasses" />
+
+  <property file="${resource.dir}/${package.path}/version.properties"/>
+
+  <property name="example.dir"          value="${example.dir}/java"/>
+
+  <property name="jar.file"             value="visitor"/>
+  <property name="binjar.file.name"     value="${lib.dir}/${jar.file}.jar"/>
+  <property name="jar.file.name"        value="${jar.file}-${version}.jar"/>
+
+  <property name="example.jar.file"             value="example"/>
+  <property name="examplejar.file.name"     value="${lib.dir}/${example.jar.file}.jar"/>
+
+
+  <path id="project.class.path">
+    <pathelement path="${build.dir}"/>
+  </path>
+
+  <path id="example.class.path">
+    <path refid="project.class.path" />
+    <pathelement path="${build.dir}" />
+    <pathelement path="${binjar.file.name}" />
+  </path>
+
+  <path id="testproject.class.path">
+    <path refid="project.class.path" />
+    <pathelement path="${test.build.dir}" />
+    <pathelement path="${junit.jar}" />
+  </path>
+
+
+  
+  <target name="clean">
+    <delete dir="${build.dir}" includeEmptyDirs="true" />
+    <delete dir="${test.build.dir}" includeEmptyDirs="true" />
+    <delete dir="${lib.dir}" includeEmptyDirs="true" />
+  </target>
+  
+      
+  <target name="prep" depends="clean" >
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${test.build.dir}"/>
+  </target>
+
+  <target name="compile" depends="prep" >
+    <javac srcdir="${java.dir}" destdir="${build.dir}" 
+            includeantruntime="false"
+            debug="true" >
+        <classpath refid="project.class.path" />
+    </javac>
+  </target>
+
+  <target name="jar" depends="compile" >
+    <delete file="${binjar.file.name}"  />
+    <jar destfile="${binjar.file.name}" > 
+      <fileset dir="${build.dir}"/>
+    </jar>
+  </target>
+
+
+  <target name="example-compile" depends="jar" >
+    <javac srcdir="${example.dir}" destdir="${build.dir}" 
+            includeantruntime="false"
+            debug="true" >
+        <classpath refid="example.class.path" />
+    </javac>
+  </target>
+
+  <target name="example-jar" depends="example-compile" >
+    <delete file="${examplejar.file.name}"  />
+    <jar destfile="${examplejar.file.name}" > 
+      <fileset dir="${build.dir}"/>
+    </jar>
+  </target>
+
+  <target name="example" depends="example-jar" >
+  </target>
+
+
+  
+    <target name="test">
+       <junit  haltonfailure="yes">
+          <classpath refid="testproject.class.path"/>
+          <formatter type="plain" usefile="false"/>
+      </junit>
+    </target>
+  
+    <target name="binjar">
+     <delete file="${binjar.file.name}"  />
+     <jar destfile="${binjar.file.name}" > 
+       <fileset dir="./classes"/>
+     </jar>
+    </target>
+
+   <target name="javadoc">
+    <javadoc destdir="docs" access="private" use="true" source="1.5"
+        notree="false" nonavbar="false" noindex="false"
+        splitindex="true" author="true" version="true" 
+        nodeprecatedlist="false" nodeprecated="false"
+        packagenames="net.sf.jsqlparser.*"
+        sourcepath="src"
+        classpath="testclasses;classes;${junit.jar}" additionalparam="-tag to.do:a:&quot;To Do:&quot;"/>
+  </target>
+
+  <target name="all" depends="clean, jar, example"/> 
+  
+</project>
