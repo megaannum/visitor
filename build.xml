@@ -82,6 +82,7 @@
             includeantruntime="false"
             debug="true" >
         <classpath refid="project.class.path" />
+        <compilerarg value="-Xlint:unchecked"/>
     </javac>
   </target>
 
@@ -98,6 +99,7 @@
             includeantruntime="false"
             debug="true" >
         <classpath refid="example.class.path" />
+        <compilerarg value="-Xlint:unchecked"/>
     </javac>
   </target>
 
