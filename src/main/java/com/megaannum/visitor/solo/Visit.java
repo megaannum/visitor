@@ -44,6 +44,14 @@ public interface Visit {
      */
     Traversal traversal();
 
+    /** 
+     * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+     * 
+     * @param debug 
+     */
+    default public void setDebug(boolean debug) {
+      // emtpy
+    }
 
     /** 
      * Visitor's built-in debug methods.
@@ -52,6 +60,15 @@ public interface Visit {
      */
     default public void debug(String msg) {
       // emtpy
+    }
+
+    /** 
+     * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+     * 
+     * @param debug 
+     */
+    default public void setError(Throwable throwable) {
+      // empty
     }
 
     /** 
@@ -83,6 +100,16 @@ public interface Visit {
      */
     default public boolean stop() {
       return hadError() || false;
+    }
+
+    /** 
+     * Sets error on missing value, if true, a missing visit method triggers
+     * a MissingImplementationException.
+     * 
+     * @param error_on_missing 
+     */
+    default public void setErrorOnMissing(boolean error_on_missing) {
+      // empty
     }
 
     /** 

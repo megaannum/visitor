@@ -1,7 +1,7 @@
 visitor
 =======
 
-Java8 visitor pattern.
+Java8 visitor patterns variations.
 
 Visitor is a design pattern. It first appeared in Mark Linton's C++ InterViews widget set (as did most of the patterns in the gang-of-four's design patterns book). A key feature of the Visitor pattern is its use of double-dispatch which enables the correct Visitor method to be called for each of the "visitable" elements.
 Basically, if you have elements "a" of type A and "b" of type B, and the "visitor" instance of the type Visitor with methods:

@@ -35,12 +35,29 @@ public interface Visitor<NODE> {
   }
 
   /** 
+   * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+   * 
+   * @param debug 
+   */
+  default public void setDebug(boolean debug) {
+  }
+
+  /** 
    * Visitor's built-in debug methods.
    * 
    * @param msg debug message to be printed
    */
   default public void debug(String msg) {
     // emtpy
+  }
+
+  /** 
+   * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+   * 
+   * @param debug 
+   */
+  default public void setError(Throwable throwable) {
+    // empty
   }
 
   /** 
@@ -73,6 +90,17 @@ public interface Visitor<NODE> {
   default public boolean stop() {
     return hadError() || false;
   }
+
+  /** 
+   * Sets error on missing value, if true, a missing visit method triggers
+   * a MissingImplementationException.
+   * 
+   * @param error_on_missing 
+   */
+  default public void setErrorOnMissing(boolean error_on_missing) {
+    // empty
+  }
+
   /** 
    * Should throw a MissingImplementationException if a node's visit
    * method is missing (so that the base, default, visit method is called)
@@ -139,58 +167,54 @@ public interface Visitor<NODE> {
                                                   Class<?> clz,
                                                   Class<?> visitorClass) 
       throws Throwable {
-System.out.println("Visitor.generate: clz=" +clz.getName());
     MethodHandles.Lookup lookup = MethodHandles.lookup();
     MethodType mt = MethodType.methodType(void.class, clz);
     MethodHandle mh_visit = lookup.findVirtual(visitorClass, "visit", mt);
     mt = MethodType.methodType(Collection.class);
-    MethodHandle mh_children = null;
-    try {
-      mh_children = lookup.findVirtual(clz, "children", mt);
-    } catch (Throwable t) {
-      // ignore
-    }
+    MethodHandle mh_children = lookup.findVirtual(clz, "children", mt);
     return new Pair<MethodHandle,MethodHandle>(mh_visit, mh_children);
   }
 
   Pair<MethodHandle,MethodHandle> lookup(Class<?> clz);
 
-  default public void dovisit(NODE object) throws Throwable {
+  default public void dovisit(NODE object) {
     Class<?> clz = object.getClass();
     Pair<MethodHandle,MethodHandle> pair = lookup(clz);
     visit(object, pair);
   }
 
   @SuppressWarnings("unchecked")
-  default public void visit(NODE node, Pair<MethodHandle,MethodHandle> pair) 
-      throws Throwable {
+  default public void visit(NODE node, Pair<MethodHandle,MethodHandle> pair) {
     debug("Visitor.visit: TOP " +node.getClass().getName());
 
-    if (filter().visitNode(node)) {
-      switch (traversal()) {
-        case BREADTH_FIRST:
-          breadth(node, pair);
-          break;
-        case DEPTH_FIRST_PRE:
-          pair.left.invoke(this, node);
-          traverse(node, pair.right);
-          break;
-        case DEPTH_FIRST_POST:
-          traverse(node, pair.right);
-          pair.left.invoke(this, node);
-          break;
-        case DEPTH_FIRST_AROUND:
-          pair.left.invoke(this, node);
-          break;
+    try {
+      if (filter().visitNode(node)) {
+        switch (traversal()) {
+          case BREADTH_FIRST:
+            breadth(node, pair);
+            break;
+          case DEPTH_FIRST_PRE:
+            pair.left.invoke(this, node);
+            traverse(node, pair.right);
+            break;
+          case DEPTH_FIRST_POST:
+            traverse(node, pair.right);
+            pair.left.invoke(this, node);
+            break;
+          case DEPTH_FIRST_AROUND:
+            pair.left.invoke(this, node);
+            break;
+        }
       }
+    } catch (Throwable t) {
+      setError(t);
+    } finally {
+      debug("Agent.visit: BOTTOM " +node.getClass().getName());
     }
-
-    debug("Agent.visit: BOTTOM " +node.getClass().getName());
   }
 
   @SuppressWarnings("unchecked")
-  default public void breadth(NODE node, Pair<MethodHandle,MethodHandle> pair) 
-      throws Throwable {
+  default public void breadth(NODE node, Pair<MethodHandle,MethodHandle> pair) {
     BreadthControl<Pair<Pair<MethodHandle,MethodHandle>,NODE>> qc = getBreadthControl();
     qc.queue().enqueue(new Pair<Pair<MethodHandle,MethodHandle>,NODE>(pair, node));
 
@@ -205,10 +229,26 @@ System.out.println("Visitor.generate: clz=" +clz.getName());
           MethodHandle visit = pairNext.left.left;
           MethodHandle children = pairNext.left.right;
           NODE nodeNext = pairNext.right;
-          visit.invoke(this, nodeNext);
+          try {
+            visit.invoke(this, nodeNext);
+          } catch (Throwable t) {
+            setError(t);
+            break;
+          }
           if (children != null && filter().visitChildren(nodeNext)) {
-            for (NODE child : (Collection<NODE>)children.invoke(nodeNext)) {
-              dovisit(child);
+            final Collection<NODE> child_nodes;
+            try {
+              child_nodes = (Collection<NODE>)children.invoke(nodeNext);
+            } catch (Throwable t) {
+              setError(t);
+              break;
+            }
+            for (NODE child : child_nodes) {
+              try {
+                dovisit(child);
+              } catch (Throwable t) {
+                setError(t);
+              }
             }
           }
         }
@@ -218,18 +258,34 @@ System.out.println("Visitor.generate: clz=" +clz.getName());
     }
   }
 
+  default public void dotraverse(NODE node) {
+    Class<?> clz = node.getClass();
+    Pair<MethodHandle,MethodHandle> pair = lookup(clz);
+    traverse(node, pair.right);
+  }
+
   @SuppressWarnings("unchecked")
-  default public void traverse(NODE node, MethodHandle children) 
-      throws Throwable {
+  default public void traverse(NODE node, MethodHandle children) {
     debug("Visitor.traverse: TOP " +node.getClass().getName());
 
     if (children != null && filter().visitChildren(node)) {
-      for (NODE child : (Collection<NODE>)children.invoke(node)) {
+      final Collection<NODE> child_nodes;
+      try {
+        child_nodes = (Collection<NODE>)children.invoke(node);
+      } catch (Throwable t) {
+        setError(t);
+        return;
+      }
+      for (NODE child : child_nodes) {
         if (stop()) {
           break;
         }
         debug("Visitor.traverse: call dovisit child=" +child.getClass().getName());
-        dovisit(child);
+        try {
+          dovisit(child);
+        } catch (Throwable t) {
+          setError(t);
+        }
       }
     }
 

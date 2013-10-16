@@ -33,12 +33,29 @@ public interface Visitor<NODE,R> {
   }
 
   /** 
+   * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+   * 
+   * @param debug 
+   */
+  default public void setDebug(boolean debug) {
+  }
+
+  /** 
    * Visitor's built-in debug methods.
    * 
    * @param msg debug message to be printed
    */
   default public void debug(String msg) {
     // emtpy
+  }
+
+  /** 
+   * Set the Visitor into debug mode (if true) and no debug mode otherwise. 
+   * 
+   * @param debug 
+   */
+  default public void setError(Throwable throwable) {
+    // empty
   }
 
   /** 
@@ -71,6 +88,17 @@ public interface Visitor<NODE,R> {
   default public boolean stop() {
     return hadError() || false;
   }
+
+  /** 
+   * Sets error on missing value, if true, a missing visit method triggers
+   * a MissingImplementationException.
+   * 
+   * @param error_on_missing 
+   */
+  default public void setErrorOnMissing(boolean error_on_missing) {
+    // empty
+  }
+
   /** 
    * Should throw a MissingImplementationException if a node's visit
    * method is missing (so that the base, default, visit method is called)
