@@ -3,6 +3,8 @@ visitor
 
 Java8 visitor patterns variations.
 
+## Introduction
+
 Visitor is a design pattern. It first appeared in Mark Linton's C++ InterViews widget set (as did most of the patterns in the gang-of-four's design patterns book). A key feature of the Visitor pattern is its use of double-dispatch which enables the correct Visitor method to be called for each of the "visitable" elements.
 Basically, if you have elements "a" of type A and "b" of type B, and the "visitor" instance of the type Visitor with methods:
     
@@ -42,6 +44,8 @@ method. Additionally, the elemnet types A and B have methods:
 
 Nothing new here.
 
+## Issues
+
 One of the problems with this is that it is hard to structure the pattern so that:
 
 *  Filters can be applied as to whether an element should be visited or not,
@@ -74,6 +78,8 @@ and
 but the Visitor control structure is still not addressed.
 
 What is needed is a way to encapsulate the chosen method along with the element and pass the two to some standard method that then controls the flow.
+
+## Node.accept java.util.function.{Consumer,Funciont,BiConsumer,BiFunction}
 
 This is exactly what this code does. It does so by using the new Java8 method
 reference capability.
@@ -174,7 +180,29 @@ The full implementation is under the "src" directory in the Visit.java file. The
 * Target: the visitable interface which all Element to be visited must implement which as the standard Visitor "accept" method as well as a "children" method that returns a Collection of child elements, and
 * Agent: the standard visitor base interface which has a number of default methods that control the visit traversal.
 
-There is an "example" directory that can be build and run using "run_example" which demonstrates all four types of traversals.
+There is an "example" directory that can be build and run using:
+
+    run_biconsumer_example.sh
+    run_bifunction_example.sh
+    run_consumer_example.sh
+    run_function_example.sh
+
+each of which can demonstrates all four types of traversals.
+
+## Intermezzo
+
+With the traditional Visitor pattern (and the 4 variants of the parameterized Visitor pattern) there are two issues.
+
+The first issue ...
+accept methods
+
+The second issue ...
+adding new Nodes.
+
+Now these issue are only relevant if you have a set of Nodes (Objects) whose future is not known, different users may want different kinds of Visitors, or if more than one type of parameterized Visitor is required. In each case, one can not add "accept" methods to the Nodes without altering the code itself.
+
+## reflect java.util.function.{Consumer,Funciont,BiConsumer,BiFunction}
+## invoke java.lang.invoke.MethodHandler
 
 TODO: 
 

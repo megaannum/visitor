@@ -72,8 +72,8 @@ public interface Visitor<NODE> {
   
   /** 
    * The Throwable that a visit method generated. Implementations of the
-   * Visit.Agent need to override this method so that if a Throwable is
-   * generated, the Agent can safe it and return it in the method that
+   * Visitor need to override this method so that if a Throwable is
+   * generated, the Visitor can safe it and return it in the method that
    * overrides this method.
    * 
    * @return Throwable generated in visit method.
@@ -157,30 +157,48 @@ public interface Visitor<NODE> {
                          Map<Class<?>,Pair<MethodHandle,MethodHandle>> mhs,
                          Class<?> visitorClass) 
         throws Throwable {
-    for (Class<?> clz : nodeClasses) {
-      Pair<MethodHandle,MethodHandle> pair = generate(clz, visitorClass);
-      mhs.put(clz, pair);
+    for (Class<?> nodeClass : nodeClasses) {
+      Pair<MethodHandle,MethodHandle> pair = generate(nodeClass, visitorClass);
+      mhs.put(nodeClass, pair);
     }
   }
 
+  default public Class<?> getNodeCollectionClass() {
+    return Collection.class;
+  }
+  default public String getNodeCollectionMethodName() {
+    return "children";
+  }
   default public Pair<MethodHandle,MethodHandle> generate(
-                                                  Class<?> clz,
+                                                  Class<?> nodeClass,
                                                   Class<?> visitorClass) 
       throws Throwable {
     MethodHandles.Lookup lookup = MethodHandles.lookup();
-    MethodType mt = MethodType.methodType(void.class, clz);
+    MethodType mt = MethodType.methodType(void.class, nodeClass);
     MethodHandle mh_visit = lookup.findVirtual(visitorClass, "visit", mt);
-    mt = MethodType.methodType(Collection.class);
-    MethodHandle mh_children = lookup.findVirtual(clz, "children", mt);
+
+    Class<?> collectionClass = getNodeCollectionClass();
+    String collectionMethodName = getNodeCollectionMethodName();
+    mt = MethodType.methodType(collectionClass);
+    MethodHandle mh_children = lookup.findVirtual(nodeClass, 
+                                                  collectionMethodName, 
+                                                  mt);
     return new Pair<MethodHandle,MethodHandle>(mh_visit, mh_children);
   }
 
-  Pair<MethodHandle,MethodHandle> lookup(Class<?> clz);
+  Pair<MethodHandle,MethodHandle> lookup(Class<?> nodeClass);
 
-  default public void dovisit(NODE object) {
-    Class<?> clz = object.getClass();
+
+
+
+  default public void dovisit(NODE node) {
+    debug("Visitor.dovisit: TOP " +node.getClass().getName());
+
+    Class<?> clz = node.getClass();
     Pair<MethodHandle,MethodHandle> pair = lookup(clz);
-    visit(object, pair);
+    visit(node, pair);
+
+    debug("Visitor.dovisit: BOTTOM " +node.getClass().getName());
   }
 
   @SuppressWarnings("unchecked")
@@ -209,7 +227,7 @@ public interface Visitor<NODE> {
     } catch (Throwable t) {
       setError(t);
     } finally {
-      debug("Agent.visit: BOTTOM " +node.getClass().getName());
+      debug("Visitor.visit: BOTTOM " +node.getClass().getName());
     }
   }
 
@@ -259,9 +277,13 @@ public interface Visitor<NODE> {
   }
 
   default public void dotraverse(NODE node) {
+    debug("Visitor.dotraverse: TOP " +node.getClass().getName());
+
     Class<?> clz = node.getClass();
     Pair<MethodHandle,MethodHandle> pair = lookup(clz);
     traverse(node, pair.right);
+
+    debug("Visitor.dotraverse: BOTTOM " +node.getClass().getName());
   }
 
   @SuppressWarnings("unchecked")

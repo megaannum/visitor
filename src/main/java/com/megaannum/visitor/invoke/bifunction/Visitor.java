@@ -72,8 +72,8 @@ public interface Visitor<NODE,R,D> {
   
   /** 
    * The Throwable that a visit method generated. Implementations of the
-   * Visit.Agent need to override this method so that if a Throwable is
-   * generated, the Agent can safe it and return it in the method that
+   * Visitor need to override this method so that if a Throwable is
+   * generated, the Visitor can safe it and return it in the method that
    * overrides this method.
    * 
    * @return Throwable generated in visit method.
@@ -252,7 +252,7 @@ public interface Visitor<NODE,R,D> {
     } catch (Throwable t) {
       setError(t);
     } finally {
-      debug("Agent.visit: BOTTOM " +node.getClass().getName());
+      debug("Visitor.visit: BOTTOM " +node.getClass().getName());
       return retval;
     }
   }
